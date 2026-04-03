@@ -1,0 +1,4 @@
+logs/
+*.log
+.copilot-scheduler/
+node_modules/
