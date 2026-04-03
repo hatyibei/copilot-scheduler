@@ -154,9 +154,18 @@ bash ~/.copilot-scheduler/jobs/<name>/run.sh
 env -i HOME=$HOME bash ~/.copilot-scheduler/jobs/<name>/run.sh
 ```
 
-### 認証エラー
+### 認証エラー（`TypeError: fetch failed`）
 
-Copilot CLI の認証トークンが期限切れの場合:
+プロキシ環境の場合、cron が `HTTP_PROXY` 等を持たないためネットワークに到達できない。
+`register-local.sh` は登録時のプロキシ設定を自動でラッパーに埋め込むが、
+プロキシ設定が変わった場合はジョブを再登録する:
+
+```bash
+bash scripts/unregister-local.sh --name "<name>"
+bash scripts/register-local.sh --cron "..." --prompt "..." --name "<name>"
+```
+
+認証トークンが期限切れの場合:
 
 ```bash
 copilot auth login

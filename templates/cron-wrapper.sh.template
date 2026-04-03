@@ -13,6 +13,17 @@ export HOME="{{HOME}}"
 export PATH="{{NODE_BIN_DIR}}:/usr/local/bin:/usr/bin:/bin"
 export NVM_DIR="{{HOME}}/.nvm"
 
+# --- Proxy Settings (inherit from user env at registration time) ---
+{{PROXY_EXPORTS}}
+
+# --- GitHub Auth (required for copilot CLI in cron) ---
+if [ -z "${GH_TOKEN:-}" ]; then
+  GH_TOKEN="$(gh auth token 2>/dev/null || true)"
+  if [ -n "$GH_TOKEN" ]; then
+    export GH_TOKEN
+  fi
+fi
+
 NAME="{{NAME}}"
 PROMPT="{{PROMPT}}"
 WORKING_DIR="{{WORKING_DIR}}"

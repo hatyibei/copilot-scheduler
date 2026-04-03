@@ -90,7 +90,25 @@ fi
 RUN_SCRIPT="${JOB_DIR}/run.sh"
 CREATED_AT="$(date --iso-8601=seconds)"
 
-sed \
+# --- Capture proxy settings from current environment ---
+PROXY_EXPORTS=""
+for VAR in HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy; do
+  VAL="${!VAR:-}"
+  if [ -n "$VAL" ]; then
+    PROXY_EXPORTS="${PROXY_EXPORTS}export ${VAR}=\"${VAL}\"
+"
+  fi
+done
+# If no proxy vars found, add a comment
+if [ -z "$PROXY_EXPORTS" ]; then
+  PROXY_EXPORTS="# No proxy settings detected at registration time"
+fi
+
+# --- Generate run.sh from template ---
+# Use a temp file approach for PROXY_EXPORTS since it contains newlines
+cp "$TEMPLATE" "$RUN_SCRIPT.tmp"
+# Replace simple variables first
+sed -i \
   -e "s|{{NAME}}|${NAME}|g" \
   -e "s|{{CRON}}|${CRON}|g" \
   -e "s|{{PROMPT}}|${PROMPT}|g" \
@@ -103,7 +121,11 @@ sed \
   -e "s|{{HOME}}|${HOME}|g" \
   -e "s|{{CREATED_AT}}|${CREATED_AT}|g" \
   -e "s|{{SCRIPT_DIR}}|${SCRIPT_DIR}|g" \
-  "$TEMPLATE" > "$RUN_SCRIPT"
+  "$RUN_SCRIPT.tmp"
+
+# Replace PROXY_EXPORTS (multiline) using awk
+awk -v proxy="$PROXY_EXPORTS" '{gsub(/\{\{PROXY_EXPORTS\}\}/, proxy); print}' "$RUN_SCRIPT.tmp" > "$RUN_SCRIPT"
+rm -f "$RUN_SCRIPT.tmp"
 
 chmod +x "$RUN_SCRIPT"
 

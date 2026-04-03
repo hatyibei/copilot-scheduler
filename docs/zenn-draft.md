@@ -186,13 +186,37 @@ if ! flock -n 200; then
 fi
 ```
 
-## 罠3: 認証切れ
+## 罠3: プロキシ環境
+
+企業ネットワークなどプロキシ経由でインターネット接続する環境では、
+cron が `HTTP_PROXY` / `HTTPS_PROXY` を持たないため Copilot CLI がネットワークに到達できない。
+
+エラーメッセージ:
+```
+Error: Authentication token found but could not be validated.
+Failed to fetch OAuth user login: TypeError: fetch failed
+```
+
+**解決策**: 登録時のプロキシ環境変数をラッパースクリプトに自動埋め込み:
+
+```bash
+# register-local.sh が登録時の環境をキャプチャ
+export HTTP_PROXY="http://proxy.example.com:8080"
+export HTTPS_PROXY="http://proxy.example.com:8080"
+export NO_PROXY="localhost,127.0.0.1,..."
+```
+
+本プロジェクトでは `register-local.sh` が実行時の `HTTP_PROXY` 等を自動的に
+生成されるラッパースクリプトに埋め込む。ユーザーが意識する必要はない。
+
+## 罠4: 認証切れ
 
 Copilot CLI の認証トークンには有効期限がある。
 cron ジョブが深夜に実行される場合、認証が切れている可能性がある。
 
-**解決策**: ログを確認して手動で `copilot auth login` を実行。
-（自動更新の仕組みは今後の課題）
+**解決策**: `gh auth token` でトークンを取得し `GH_TOKEN` に設定。
+ラッパースクリプトがこれを自動で行う。
+トークン自体が期限切れの場合は手動で `copilot auth login` を実行。
 
 ---
 
